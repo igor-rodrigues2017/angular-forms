@@ -1,6 +1,8 @@
 import { Component, OnInit } from '@angular/core';
 import { UserSettings } from '../data/user-settings';
 import { NgForm, NgModel } from '@angular/forms';
+import { DataService } from '../data/data.service';
+import { Observable } from 'rxjs';
 
 @Component({
   selector: 'app-user-settings-form',
@@ -18,10 +20,14 @@ export class UserSettingsFormComponent implements OnInit {
   };
 
   userSettings: UserSettings = { ...this.originalUserSettings };
+  subscriptionTypes: Observable<string[]>;
+  postError = false;
+  postErrorMessage: string;
 
-  constructor() { }
+  constructor(private dataService: DataService) { }
 
   ngOnInit() {
+    this.subscriptionTypes = this.dataService.getSubscriptionTypes();
   }
 
   onBlur(field: NgModel) {
@@ -30,6 +36,20 @@ export class UserSettingsFormComponent implements OnInit {
 
   onSubmit(form: NgForm) {
     console.log('in on submit: ', form.valid);
+    if (form.valid) {
+      this.dataService.postUserSettingsForm(this.userSettings).subscribe(
+        result => console.log('successs: ', result),
+        error => this.onHttpError(error)
+      );
+    } else {
+      this.postError = true;
+      this.postErrorMessage = 'Please fix the above errors';
+    }
   }
 
+  onHttpError(errorResponse: any): void {
+    console.log('error: ', errorResponse);
+    this.postError = true;
+    this.postErrorMessage = errorResponse.error.errorMessage;
+  }
 }
